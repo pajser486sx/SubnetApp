@@ -1,8 +1,5 @@
 @import "tailwindcss";
 
-/* 
-@font-face {
- ...
+* {
+  font-family: "Courier New", Courier, monospace;
 }
-
-later when I will choose the font */

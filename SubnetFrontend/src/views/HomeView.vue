@@ -1,13 +1,13 @@
 <script setup>
 import { ref } from "vue";
 import { useRouter } from "vue-router";
+import { subnetcalc } from "@/utils/subnetcalc.js";
 
 const router = useRouter();
 
 const ipAddress = ref("");
 const cidr = ref(24);
 
-//placeholders
 const result = ref({
   subnetMask: "",
   networkAddress: "",
@@ -18,15 +18,23 @@ const result = ref({
   usableHosts: ""
 });
 
+const errorMessage = ref("");
+
 const goToRegister = () => {
   router.push("/register");
 };
 
 const calculate = () => {
-  console.log("IP:", ipAddress.value);
-  console.log("CIDR:", cidr.value);
+  try {
+    errorMessage.value = "";
 
-  
+    result.value = subnetcalc(
+      ipAddress.value,
+      Number(cidr.value)
+    );
+  } catch (error) {
+    errorMessage.value = error.message;
+  }
 };
 
 const explainWithAI = () => {
@@ -88,6 +96,10 @@ const explainWithAI = () => {
       <button @click="calculate">
         Calculate
       </button>
+      <p v-if="errorMessage">
+         {{ errorMessage }}
+    </p>
+    
 
       <button @click="explainWithAI">
         Explain with AI

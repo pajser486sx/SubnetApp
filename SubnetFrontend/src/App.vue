@@ -1,10 +1,8 @@
-<script setup></script>
+<script setup>
+import { RouterView } from "vue-router";
+</script>
 
 <template>
-  <h1>Subnet Calculator Frontend</h1>
-  <p>
-    ...
-  </p>
+  <RouterView />
 </template>
 
-<style scoped></style>

@@ -64,7 +64,7 @@ const explainWithAI = () => {
         <input id="ip-address"
           v-model="ipAddress"
           type="text"
-          placeholder="192.168.1.130"
+          placeholder="ex: 192.168.1.130"
         >
       </div>
 

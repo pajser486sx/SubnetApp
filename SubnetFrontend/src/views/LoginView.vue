@@ -1,30 +1,84 @@
 <script setup>
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { useAuth } from "../composables/useAuth";
+
+const router = useRouter();
+
+const {
+  saveAuth
+} = useAuth();
+
+const email = ref("");
+const password = ref("");
+const error = ref("");
+
+const login = async () => {
+  error.value = "";
+
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/auth/login`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json"
+        },
+
+        body: JSON.stringify({
+          email: email.value,
+          password: password.value
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      error.value = data.message;
+      return;
+    }
+
+    saveAuth(data);
+
+    router.push("/");
+
+  } catch (err) {
+    error.value = "Could not connect to server";
+  }
+};
 </script>
 <template>
   <div>
-    <h1>Log in</h1>
+    <h1>Login</h1>
 
-    <form>
-      <label>Email</label>
+    <form @submit.prevent="login">
+
       <input
+        v-model="email"
         type="email"
-        placeholder="Enter your email"
-      />
+        placeholder="Email"
+      >
 
-      <label>Password</label>
       <input
+        v-model="password"
         type="password"
-        placeholder="Enter your password"
-      />
+        placeholder="Password"
+      >
 
       <button type="submit">
         Log in
       </button>
+
     </form>
 
-    <p>
-      Don't have an account?
-      <RouterLink to="/register">Register</RouterLink>
+    <p v-if="error">
+      {{ error }}
     </p>
+
+    <RouterLink to="/register">
+      Don't have an account? Register
+    </RouterLink>
   </div>
 </template>

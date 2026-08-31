@@ -2,8 +2,11 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { subnetcalc } from "@/utils/subnetcalc.js";
+import { useAuth } from "../composables/useAuth";
 
 const router = useRouter();
+
+const {isLoggedIn} = useAuth();
 
 const ipAddress = ref("");
 const cidr = ref(24);
@@ -22,6 +25,16 @@ const errorMessage = ref("");
 
 const goToRegister = () => {
   router.push("/register");
+};
+
+const goToUser = () => {
+
+  if (isLoggedIn.value) {
+    router.push("/user");
+  } else {
+    router.push("/login");
+  }
+
 };
 
 const calculate = () => {
@@ -44,6 +57,8 @@ const explainWithAI = () => {
 
 <template>
   <main>
+
+    <button @click="goToUser"> User </button>
 
     <div>
       <button @click="goToRegister">Register</button>

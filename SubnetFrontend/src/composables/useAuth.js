@@ -1,41 +1,52 @@
 import { ref, computed } from "vue";
 
-const token = ref(
-  localStorage.getItem("subnetToken")
-);
+const TOKEN_KEY = "subnetToken";
+const USER_KEY = "subnetUser";
+const storedUser = localStorage.getItem(USER_KEY);
 
-const storedUser = localStorage.getItem("subnetUser");
+const token = ref(
+  localStorage.getItem(TOKEN_KEY) || "");
 
 const user = ref(
   storedUser ? JSON.parse(storedUser) : null
 );
 
+const isLoggedIn = computed(() => {
+  return Boolean(token.value && user.value);
+});
+
 export const useAuth = () => {
-  const isLoggedIn = computed(() => {
-    return !!token.value;
-  });
 
   const saveAuth = (data) => {
     token.value = data.token;
     user.value = data.user;
 
     localStorage.setItem(
-      "subnetToken",
+      TOKEN_KEY,
       data.token
     );
 
     localStorage.setItem(
-      "subnetUser",
+      USER_KEY,
       JSON.stringify(data.user)
     );
   };
 
   const logout = () => {
-    token.value = null;
+    token.value = "";
     user.value = null;
 
-    localStorage.removeItem("subnetToken");
-    localStorage.removeItem("subnetUser");
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(USER_KEY);
+  };
+
+  const getAuthHeaders = () => {
+    if (!token.value) {
+      return {};
+    }
+    return {
+      Authorization: `Bearer ${token.value}`
+    };
   };
 
   return {
@@ -43,6 +54,7 @@ export const useAuth = () => {
     user,
     isLoggedIn,
     saveAuth,
-    logout
+    logout,
+    getAuthHeaders
   };
 };

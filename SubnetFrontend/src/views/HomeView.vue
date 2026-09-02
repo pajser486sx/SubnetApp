@@ -4,9 +4,15 @@ import { useRouter } from "vue-router";
 import { subnetcalc } from "@/utils/subnetcalc.js";
 import { useAuth } from "../composables/useAuth";
 
+const aiExplanation = ref("");
+const aiLoading = ref(false);
+const aiError = ref("");
+const saveMessage = ref("");
+const explainedCalculation = ref(null);
+
 const router = useRouter();
 
-const {isLoggedIn} = useAuth();
+const {isLoggedIn, authHeader} = useAuth();
 
 const ipAddress = ref("");
 const cidr = ref(24);
@@ -50,9 +56,50 @@ const calculate = () => {
   }
 };
 
-const explainWithAI = () => {
-  console.log("AI explanation will be added later.");
+const explainWithAI = async () => {
+  aiError.value = "";
+  saveMessage.value = "";
+  if (!result.value.networkAddress) {
+    aiError.value = "Calculate a subnet first.";
+    return;
+  }
+  aiLoading.value = true;
+
+  try {
+    const calculation = {
+      ipAddress: ipAddress.value,
+      cidr: Number(cidr.value),
+      results: { ...result.value}
+    };
+
+    const response = await fetch(
+	`${import.meta.env.VITE_API_URL}/api/ai/explain`,
+      {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(calculation)
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      aiError.value = data.message || "Could not generate explanation";
+      return;
+    }
+
+    aiExplanation.value = data.explanation;
+    explainedCalculation.value = calculation;
+
+  } catch (error){
+    aiError.value = "Could not connect to the server";
+
+  } finally{
+	aiLoading.value = false;
+  }
 };
+
+
 </script>
 
 <template>
@@ -167,6 +214,20 @@ const explainWithAI = () => {
     </section>
 
     <hr>
+
+    <section>
+
+      <h2>AI Explanation</h2>
+
+      <p v-if="aiLoading">Loading explanation...</p>
+      <p v-if="aiError">{{ aiError }}</p>
+      <p v-if="saveMessage">{{ saveMessage }}</p>
+
+      <div v-if="aiExplanation">
+        <h3>Explanation:</h3>
+        <p>{{ aiExplanation }}</p>
+      </div>
+    </section>
 
   </main>
 </template>

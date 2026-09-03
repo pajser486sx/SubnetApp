@@ -1,5 +1,5 @@
 <script setup>
-import { ref } from "vue";
+import { ref, watch } from "vue";
 import { useRouter } from "vue-router";
 import { subnetcalc } from "@/utils/subnetcalc.js";
 import { useAuth } from "../composables/useAuth";
@@ -12,7 +12,7 @@ const explainedCalculation = ref(null);
 
 const router = useRouter();
 
-const {isLoggedIn, authHeader} = useAuth();
+const { isLoggedIn, getAuthHeaders } = useAuth();
 
 const ipAddress = ref("");
 const cidr = ref(24);
@@ -27,6 +27,24 @@ const result = ref({
   usableHosts: ""
 });
 
+watch([ipAddress, cidr], () => {
+  result.value = {
+    subnetMask: "",
+    networkAddress: "",
+    broadcastAddress: "",
+    firstUsableHost: "",
+    lastUsableHost: "",
+    totalAddresses: "",
+    usableHosts: ""
+  };
+
+  aiExplanation.value = "";
+  aiError.value = "";
+  saveMessage.value = "";
+  explainedCalculation.value = null;
+  errorMessage.value = "";
+});
+
 const errorMessage = ref("");
 
 const goToRegister = () => {
@@ -34,19 +52,16 @@ const goToRegister = () => {
 };
 
 const goToUser = () => {
-
   if (isLoggedIn.value) {
     router.push("/user");
   } else {
     router.push("/login");
   }
-
 };
 
 const calculate = () => {
   try {
     errorMessage.value = "";
-
     result.value = subnetcalc(
       ipAddress.value,
       Number(cidr.value)
@@ -69,14 +84,16 @@ const explainWithAI = async () => {
     const calculation = {
       ipAddress: ipAddress.value,
       cidr: Number(cidr.value),
-      results: { ...result.value}
+      results: { ...result.value }
     };
 
     const response = await fetch(
-	`${import.meta.env.VITE_API_URL}/api/ai/explain`,
+      `${import.meta.env.VITE_API_URL}/api/ai/explain`,
       {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify(calculation)
       }
     );
@@ -91,29 +108,69 @@ const explainWithAI = async () => {
     aiExplanation.value = data.explanation;
     explainedCalculation.value = calculation;
 
-  } catch (error){
-    aiError.value = "Could not connect to the server";
+  } catch (error) {
+     aiError.value = "Could not connect to the server";
 
-  } finally{
-	aiLoading.value = false;
+  } finally {
+    aiLoading.value = false;
   }
 };
 
+const saveExplanation = async () => {
+  saveMessage.value = "";
 
+  if (!aiExplanation.value || !explainedCalculation.value) {
+    saveMessage.value = "Generate an explanation first.";
+    return;
+  }
+
+  try {
+    const response = await fetch(
+      `${import.meta.env.VITE_API_URL}/api/saved-explanations`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...getAuthHeaders()
+        },
+        body: JSON.stringify({
+          ...explainedCalculation.value,
+          explanation: aiExplanation.value
+        })
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      saveMessage.value = data.message || "Could not save explanation";
+      return;
+    }
+    saveMessage.value = "Explanation saved.";
+
+  } catch (error) {
+    saveMessage.value = "Could not connect to server";
+  }
+};
 </script>
 
 <template>
   <main>
 
-    <button @click="goToUser"> User </button>
+    <button @click="goToUser">
+      User
+    </button>
 
     <div>
-      <button @click="goToRegister">Register</button>
+      <button @click="goToRegister">
+        Register
+      </button>
     </div>
 
     <hr>
 
     <h1>SUBNET CALCULATOR</h1>
+
     <section>
 
       <div>
@@ -123,7 +180,8 @@ const explainWithAI = async () => {
 
         <br>
 
-        <input id="ip-address"
+        <input
+          id="ip-address"
           v-model="ipAddress"
           type="text"
           placeholder="ex: 192.168.1.130"
@@ -158,10 +216,13 @@ const explainWithAI = async () => {
       <button @click="calculate">
         Calculate
       </button>
-      <p v-if="errorMessage">
-         {{ errorMessage }}
-    </p>
-    
+
+      <p
+        v-if="errorMessage"
+        class="mt-3"
+      >
+        {{ errorMessage }}
+      </p>
 
       <button @click="explainWithAI">
         Explain with AI
@@ -170,7 +231,6 @@ const explainWithAI = async () => {
     </section>
 
     <hr>
-
 
     <section>
 
@@ -208,26 +268,29 @@ const explainWithAI = async () => {
 
       <p>
         <strong>Number of Usable Hosts:</strong>
-        {{ result.usableHosts || "-" }}
+        {{ result.usableHosts !== "" ? result.usableHosts : "-" }}
       </p>
 
     </section>
 
     <hr>
 
-    <section>
-
+    <section class="mt-8">
       <h2>AI Explanation</h2>
 
       <p v-if="aiLoading">Loading explanation...</p>
-      <p v-if="aiError">{{ aiError }}</p>
-      <p v-if="saveMessage">{{ saveMessage }}</p>
+      <p v-if="aiError" class="mt-3">{{ aiError }}</p>
 
-      <div v-if="aiExplanation">
-        <h3>Explanation:</h3>
-        <p>{{ aiExplanation }}</p>
+      <div v-if="aiExplanation" class="mt-4 p-4 border border-gray-400 rounded-lg">
+        <h3>Explanation: </h3>
+
+        <p class="whitespace-pre-wrap leading-6">{{ aiExplanation }}</p>
       </div>
+
     </section>
+
+    <button v-if="isLoggedIn && aiExplanation" type="button" @click="saveExplanation">Save Explanation</button>
+    <p v-if="saveMessage" class="mt-3">{{ saveMessage }}</p>
 
   </main>
 </template>

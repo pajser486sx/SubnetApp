@@ -1,8 +1,10 @@
 <script setup>
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { useRouter } from "vue-router";
 import { subnetcalc } from "@/utils/subnetcalc.js";
 import { useAuth } from "../composables/useAuth";
+import { User } from "lucide-vue-next";
+import { marked } from "marked";
 
 const aiExplanation = ref("");
 const aiLoading = ref(false);
@@ -152,26 +154,32 @@ const saveExplanation = async () => {
     saveMessage.value = "Could not connect to server";
   }
 };
+
+const renderedAiExplanation = computed(() => {
+  if (!aiExplanation.value) {
+    return "";
+  }
+  return marked.parse(aiExplanation.value);
+});
 </script>
 
 <template>
   <main>
-
-    <button @click="goToUser">
-      User
-    </button>
-
-    <div>
-      <button @click="goToRegister">
-        Register
-      </button>
-    </div>
+    <div class="fixed top-6 right-6 z-50 flex items-center gap-3"></div>
+    <button
+     type="button"
+     @click="goToUser"
+     class="fixed top-6 right-6 z-50 p-3 bg-black border border-cyan-500 rounded-lg hover:bg-gray-900 cursor-pointer"
+      title="User">
+      <User class="w-6 h-6 text-cyan-500" />
+</button>
+    
 
     <hr>
 
     <h1>SUBNET CALCULATOR</h1>
 
-    <section>
+    <section class="text-cyan-500">
 
       <div>
         <label for="ip-address">
@@ -219,7 +227,7 @@ const saveExplanation = async () => {
 
       <p
         v-if="errorMessage"
-        class="mt-3"
+        class="mt-3 font-bold text-red-500"
       >
         {{ errorMessage }}
       </p>
@@ -232,7 +240,7 @@ const saveExplanation = async () => {
 
     <hr>
 
-    <section>
+    <section class="text-cyan-500">
 
       <h2>Results</h2>
 
@@ -276,15 +284,20 @@ const saveExplanation = async () => {
     <hr>
 
     <section class="mt-8">
-      <h2>AI Explanation</h2>
 
       <p v-if="aiLoading">Loading explanation...</p>
       <p v-if="aiError" class="mt-3">{{ aiError }}</p>
 
-      <div v-if="aiExplanation" class="mt-4 p-4 border border-gray-400 rounded-lg">
-        <h3>Explanation: </h3>
-
-        <p class="whitespace-pre-wrap leading-6">{{ aiExplanation }}</p>
+      <div v-if="aiExplanation"
+         class="leading-6
+         [&_h2]:text-xl [&_h2]:font-bold [&_h2]:mt-4
+         [&_h3]:text-lg [&_h3]:font-semibold [&_h3]:mt-3
+         [&_p]:my-2
+         [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:my-2
+         [&_li]:my-1
+         [&_strong]:font-bold
+         [&_code]:bg-cyan-900 [&_code]:px-1 [&_code]:rounded"
+          v-html="renderedAiExplanation">
       </div>
 
     </section>

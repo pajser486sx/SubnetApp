@@ -151,17 +151,17 @@ onMounted(() => {
     </section>
 
     <section>
-      <h2 class="text-2xl font-semibold mb-4">
+      <h2 class="text-2xl font-semibold mb-4 text-white">
         Your saved explanations:
       </h2>
 
       <p v-if="loading">Loading...</p>
 
-      <p v-else-if="error" class="mt-3">
+      <p v-else-if="error" class="mt-3 text-red-500">
         {{ error }}
       </p>
 
-      <p v-else-if="explanations.length === 0">
+      <p v-else-if="explanations.length === 0" class="text-white">
         You have no saved explanations yet.
       </p>
 
@@ -172,7 +172,7 @@ onMounted(() => {
           :key="item._id"
           type="button"
           @click="openExplanation(item)"
-          class="w-50 h-50 p-4 bg-black text-cyan-500 border border-gray-500 rounded-lg text-left overflow-hidden hover:bg-gray-900 cursor-pointer">
+          class="w-55 h-52 p-4 bg-black text-cyan-500 border border-gray-500 rounded-lg text-left overflow-hidden hover:bg-gray-900 cursor-pointer">
 
           <h3 class="text-lg font-semibold mb-3">
             {{ item.ipAddress }}/{{ item.cidr }}
@@ -288,7 +288,7 @@ onMounted(() => {
 
         </div>
 
-        <small class="block mt-4 opacity-70">
+        <small class="block mt-4 text-cyan-600">
           Saved: {{ formatDate(selectedExplanation.createdAt) }}
         </small>
 

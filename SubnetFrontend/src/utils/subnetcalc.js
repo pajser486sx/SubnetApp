@@ -24,7 +24,11 @@ export function subnetcalc(ipAddress, cidr) {
   const broadcast = (network | (~mask >>> 0)) >>> 0;
   const totalAddresses = 2 ** (32 - cidr);
 
-  const usableHosts = cidr <= 30 ? totalAddresses - 2 : 0;
+  let usableHosts;
+
+  if (cidr <= 30) usableHosts = totalAddresses - 2;
+  else if (cidr === 31) usableHosts = 2;
+  else usableHosts = 0;
 
   const numberToIp = (number) => {
     return [
@@ -35,17 +39,23 @@ export function subnetcalc(ipAddress, cidr) {
     ].join(".");
   };
 
+  let firstUsableHost = "";
+  let lastUsableHost = "";
+
+  if (cidr === 31) {
+    firstUsableHost = numberToIp(network);
+    lastUsableHost = numberToIp(broadcast);
+  } else if (usableHosts > 0) {
+    firstUsableHost = numberToIp(network + 1);
+    lastUsableHost = numberToIp(broadcast - 1);
+  }
+
   return {
     subnetMask: numberToIp(mask),
     networkAddress: numberToIp(network),
     broadcastAddress: numberToIp(broadcast),
-
-    firstUsableHost:
-      usableHosts > 0 ? numberToIp(network + 1) : "",
-
-    lastUsableHost:
-      usableHosts > 0 ? numberToIp(broadcast - 1) : "",
-
+    firstUsableHost,
+    lastUsableHost,
     totalAddresses,
     usableHosts
   };
